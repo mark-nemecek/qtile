@@ -16,7 +16,7 @@ keys = [
     Key([mod], "l", lazy.layout.right(), desc="Move focus to right"),
     Key([mod], "j", lazy.layout.down(), desc="Move focus down"),
     Key([mod], "k", lazy.layout.up(), desc="Move focus up"),
-    Key([mod], "space", lazy.layout.next(), desc="Move window focus to other window"),
+    Key([mod], "d", lazy.layout.next(), desc="Move window focus to other window"),
     # Move windows between left/right columns or move up/down in current stack.
     # Moving out of range in Columns layout will create new column.
     Key([mod, "shift"], "h", lazy.layout.shuffle_left(), desc="Move window to the left"),
@@ -43,7 +43,7 @@ keys = [
     Key([mod], "Return", lazy.spawn(terminal), desc="Launch terminal"),
     # Toggle between different layouts as defined below
     Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
-    Key([mod], "q", lazy.window.kill(), desc="Kill focused window"),
+    Key([mod, "shift"], "q", lazy.window.kill(), desc="Kill focused window"),
     Key(
         [mod],
         "f",
@@ -53,13 +53,14 @@ keys = [
     Key([mod], "t", lazy.window.toggle_floating(), desc="Toggle floating on the focused window"),
     Key([mod, "control"], "r", lazy.reload_config(), desc="Reload the config"),
     Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
-    Key([mod], "d", lazy.spawn("rofi -show drun -show-icons"), desc='Run Launcher'),
+    Key([mod], "space", lazy.spawn("rofi -show drun -show-icons"), desc='Run Launcher'),
     Key(
         [mod], 
         "s",
         lazy.spawn('sh -c "maim -s | xclip -selection clipboard -t image/png -i"'),
         desc="Screenshot"
     ),
+    Key([mod], "x", lazy.next_screen(), desc="Move to next display"),
 ]
 
 # Add key bindings to switch VTs in Wayland.
@@ -76,7 +77,7 @@ for vt in range(1, 8):
     )
 
 
-groups = [Group(i) for i in "123456789"]
+groups = [Group(i) for i in "1234567890"]
 
 for i in groups:
     keys.extend(
@@ -85,7 +86,7 @@ for i in groups:
             Key(
                 [mod],
                 i.name,
-                lazy.group[i.name].toscreen(),
+                lazy.group[i.name].toscreen(toggle=True),
                 desc=f"Switch to group {i.name}",
             ),
             # mod + shift + group number = switch to & move focused window to group
@@ -131,27 +132,47 @@ layouts = [
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
     # layout.Bsp(),
-    # layout.Matrix(),
+    layout.Matrix(),
     layout.MonadTall(**layout_theme),
     # layout.MonadWide(),
     # layout.RatioTile(),
-    # layout.Tile(),
+    layout.Tile(),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
 ]
 
 widget_defaults = dict(
-    font="JetBrainsMono Nerd Font Propo Bold",
+    font="JetBrainsMono Nerd Font",
     fontsize=16,
     padding=0,
     background=colors[0],
 )
 
+default_fontsize = 20
 
 extension_defaults = widget_defaults.copy()
 
 sep = widget.Sep(linewidth=1, padding=8, foreground=colors[9])
+clock_widget = widget.Clock(
+                    foreground = colors[8],
+                    padding = 8, 
+                    mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn('notify-date')},
+                    format = "%a, %b %d - %H:%M",
+                    fontsize = default_fontsize,
+                )
+volume_widget = widget.PulseVolume(
+                    foreground = colors[7],
+                    padding = 8, 
+                    fmt = 'Vol: {}',
+                    fontsize = default_fontsize,
+                )
+volume_widget.add_callbacks({
+                    "Button1": lambda: volume_widget.mute(),
+                    #"Button2": lambda: subprocess.Popen('pavucontrol'),
+                    "Button4": lambda: volume_widget.increase_vol(),
+                    "Button5": lambda: volume_widget.decrease_vol(),
+            })
 
 screens = [
     Screen(
@@ -164,12 +185,13 @@ screens = [
                     mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn("qtilekeys-yad")},
                 ),
                 widget.Prompt(
-                    font = "Ubuntu Mono",
-                    fontsize=14,
-                    foreground = colors[1]
+                    font = "JetBrainsMono Nerd Font",
+                    fontsize = default_fontsize,
+                    foreground = colors[1],
                 ),
                 widget.GroupBox(
-                    fontsize = 18,
+                    font = "JetBrainsMono Nerd Font",
+                    fontsize = default_fontsize,
                     margin_y = 5,
                     margin_x = 5,
                     padding_y = 0,
@@ -187,26 +209,28 @@ screens = [
                 ),
                 widget.TextBox(
                     text = '|',
-                    font = "JetBrainsMono Nerd Font Propo Bold",
+                    font = "JetBrainsMono Nerd Font",
                     foreground = colors[9],
                     padding = 2,
-                    fontsize = 14
+                    fontsize = default_fontsize,
                 ),
                 widget.CurrentLayout(
                     foreground = colors[1],
-                    padding = 5
+                    padding = 5,
+                    fontsize = default_fontsize,
                 ),
                 widget.TextBox(
                     text = '|',
-                    font = "JetBrainsMono Nerd Font Propo Bold",
+                    font = "JetBrainsMono Nerd Font",
                     foreground = colors[9],
                     padding = 2,
-                    fontsize = 14
+                    fontsize = default_fontsize,
                 ),
                 widget.WindowName(
                     foreground = colors[6],
                     padding = 8,
-                    max_chars = 40
+                    max_chars = 40,
+                    fontsize = default_fontsize,
                 ),
                 widget.GenPollText(
                     update_interval = 300,
@@ -214,6 +238,7 @@ screens = [
                     foreground = colors[3],
                     padding = 8, 
                     fmt = '{}',
+                    fontsize = default_fontsize,
                 ),
                 sep,
                 widget.CPU(
@@ -221,6 +246,7 @@ screens = [
                     padding = 8, 
                     mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(myTerm + ' -e btop')},
                     format="CPU: {load_percent}%",
+                    fontsize = default_fontsize,
                 ),
                 sep,
                 widget.Memory(
@@ -228,6 +254,7 @@ screens = [
                     padding = 8, 
                     mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(myTerm + ' -e btop')},
                     format = 'Mem: {MemUsed:.0f}{mm}',
+                    fontsize = default_fontsize,
                 ),
                 sep,
                 widget.DF(
@@ -239,41 +266,97 @@ screens = [
                     format = '{uf}{m} free',
                     fmt = 'Disk: {}',
                     visible_on_warn = False,
+                    fontsize = default_fontsize,
+                ),
+                #sep,
+                #widget.Battery(
+                #    foreground=colors[6],           # pick a palette slot you like
+                #    padding=8,
+                #    update_interval=5,
+                #    format='{percent:2.0%} {char} {hour:d}:{min:02d}',  # e.g. "73% ⚡ 1:45"
+                #    fmt='Bat: {}',
+                #    charge_char='',               # shown while charging
+                #    discharge_char='',            # Nerd icon; use '-' if you prefer plain ascii
+                #    full_char='✔',                 # when at/near 100%
+                #    unknown_char='?',
+                #    empty_char='!', 
+                #    mouse_callbacks={
+                #        'Button1': lambda: qtile.cmd_spawn(myTerm + ' -e upower -i $(upower -e | grep BAT)'),
+                #    },
+                #),
+                sep,
+                volume_widget,
+                sep,
+                clock_widget,
+                widget.Spacer(length = 8),
+            ],
+            margin=[0, 0, 0, 0], 
+            size=40
+        ),
+    ),
+    Screen(
+        top=bar.Bar(
+            widgets = [
+                widget.Spacer(length = 8),
+                widget.Image(
+                    filename = "~/.config/qtile/icons/tonybtw.png",
+                    scale = "False",
+                    mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn("qtilekeys-yad")},
+                ),
+                widget.Prompt(
+                    font = "JetBrainsMono Nerd Font",
+                    fontsize = default_fontsize,
+                    foreground = colors[1],
+                ),
+                widget.GroupBox(
+                    fontsize = default_fontsize,
+                    margin_y = 5,
+                    margin_x = 5,
+                    padding_y = 0,
+                    padding_x = 2,
+                    borderwidth = 3,
+                    active = colors[8],
+                    inactive = colors[9],
+                    rounded = False,
+                    highlight_color = colors[0],
+                    highlight_method = "line",
+                    this_current_screen_border = colors[7],
+                    this_screen_border = colors [4],
+                    other_current_screen_border = colors[7],
+                    other_screen_border = colors[4],
+                ),
+                widget.TextBox(
+                    text = '|',
+                    font = "JetBrainsMono Nerd Font",
+                    foreground = colors[9],
+                    padding = 2,
+                    fontsize = default_fontsize,
+                ),
+                widget.CurrentLayout(
+                    foreground = colors[1],
+                    padding = 5,
+                    fontsize = default_fontsize,
+                ),
+                widget.TextBox(
+                    text = '|',
+                    font = "JetBrainsMono Nerd Font",
+                    foreground = colors[9],
+                    padding = 2,
+                    fontsize = default_fontsize,
+                ),
+                widget.WindowName(
+                    foreground = colors[6],
+                    padding = 8,
+                    max_chars = 40,
+                    fontsize = default_fontsize,
                 ),
                 sep,
-                widget.Battery(
-                    foreground=colors[6],           # pick a palette slot you like
-                    padding=8,
-                    update_interval=5,
-                    format='{percent:2.0%} {char} {hour:d}:{min:02d}',  # e.g. "73% ⚡ 1:45"
-                    fmt='Bat: {}',
-                    charge_char='',               # shown while charging
-                    discharge_char='',            # Nerd icon; use '-' if you prefer plain ascii
-                    full_char='✔',                 # when at/near 100%
-                    unknown_char='?',
-                    empty_char='!', 
-                    mouse_callbacks={
-                        'Button1': lambda: qtile.cmd_spawn(myTerm + ' -e upower -i $(upower -e | grep BAT)'),
-                    },
-                ),
-                sep,
-                widget.Volume(
-                    foreground = colors[7],
-                    padding = 8, 
-                    fmt = 'Vol: {}',
-                ),
-                sep,
-                widget.Clock(
-                    foreground = colors[8],
-                    padding = 8, 
-                    mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn('notify-date')},
-                    format = "%a, %b %d - %H:%M",
-                ),
+                clock_widget,
                 widget.Systray(padding = 6),
                 widget.Spacer(length = 8),
             ],
             margin=[0, 0, 0, 0], 
-            size=30
+            size=40
         ),
     ),
 ]
